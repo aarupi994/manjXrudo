@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-import json, bcrypt
+import json
+import bcrypt
 
 app = FastAPI()
 
@@ -10,19 +11,23 @@ templates = Jinja2Templates(directory="templates")
 
 DB = "users.json"
 
+# Load users
 def load():
     try:
-        return json.load(open(DB))
+        with open(DB, "r") as f:
+            return json.load(f)
     except:
         return []
 
+# Save users
 def save(data):
-    json.dump(data, open(DB, "w"), indent=4)
+    with open(DB, "w") as f:
+        json.dump(data, f, indent=4)
 
-# TEMP MAIL BLOCK
+# Block temp emails
 blocked = ["tempmail", "10min", "mailinator"]
 
-# ✅ HOME PAGE FIX (IMPORTANT)
+# ✅ HOME PAGE (FIXED)
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
@@ -30,17 +35,19 @@ def home(request: Request):
 # ✅ REGISTER
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
-    
+
+    # Block fake email
     if any(x in email.lower() for x in blocked):
         return {"msg": "❌ Fake email not allowed"}
 
     db = load()
 
-    # check already exist
+    # Check duplicate
     for u in db:
         if u["email"] == email:
             return {"msg": "⚠️ Email already registered"}
 
+    # Hash password
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
     user = {
@@ -53,3 +60,16 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
     save(db)
 
     return {"msg": "✅ Registered Successfully"}
+
+# ✅ LOGIN (basic)
+@app.post("/login")
+def login(email: str = Form(...), password: str = Form(...)):
+
+    db = load()
+
+    for u in db:
+        if u["email"] == email:
+            if bcrypt.checkpw(password.encode(), u["password"].encode()):
+                return {"msg": "✅ Login Success"}
+
+    return {"msg": "❌ Invalid Email or Password"}
