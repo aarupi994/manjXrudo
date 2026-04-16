@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Form
-import json, bcrypt, random
+import json, bcrypt
 
 app = FastAPI()
 DB = "users.json"
@@ -13,20 +13,25 @@ def load():
 def save(data):
     json.dump(data, open(DB, "w"), indent=4)
 
+# TEMP MAIL BLOCK
+blocked = ["tempmail", "10min", "mailinator"]
+
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
+    if any(x in email.lower() for x in blocked):
+        return {"msg": "Fake email not allowed"}
+
     db = load()
+
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-    user = {"username": username, "email": email, "password": hashed, "premium": False}
+
+    user = {
+        "username": username,
+        "email": email,
+        "password": hashed
+    }
+
     db.append(user)
     save(db)
-    return {"msg": "Registered"}
 
-@app.post("/login")
-def login(email: str = Form(...), password: str = Form(...)):
-    db = load()
-    for u in db:
-        if u["email"] == email and bcrypt.checkpw(password.encode(), u["password"].encode()):
-            return {"msg": "Login Success"}
-    return {"msg": "Invalid"}
-
+    return {"msg": "Registered Successfully"}
