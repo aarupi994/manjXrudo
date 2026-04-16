@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ManjXrudo Auth</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: monospace;
+}
+
+body{
+    background:black;
+    overflow:hidden;
+}
+
+/* Canvas background */
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:-1;
+}
+
+/* Center Box */
+.container{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.85);
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 0 25px #00ffcc;
+    width:320px;
+}
+
+/* Animated Title */
+.title{
+    text-align:center;
+    font-size:28px;
+    color:#00ffcc;
+    margin-bottom:20px;
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow{
+    from { text-shadow:0 0 5px #00ffcc; }
+    to { text-shadow:0 0 20px #00ffcc,0 0 30px #00ffcc; }
+}
+
+/* Inputs */
+input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    background:black;
+    border:1px solid #00ffcc;
+    color:#00ffcc;
+    border-radius:8px;
+    outline:none;
+}
+
+/* Buttons */
+button{
+    width:100%;
+    padding:10px;
+    margin-top:15px;
+    background:#00ffcc;
+    border:none;
+    color:black;
+    font-weight:bold;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#00ccaa;
+}
+
+/* Divider */
+hr{
+    margin:20px 0;
+    border:0.5px solid #00ffcc;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Background Animation -->
+<canvas id="bg"></canvas>
+
+<div class="container">
+
+<div class="title">⚡ ManjXrudo ⚡</div>
+
+<form action="/register" method="post">
+<input type="text" name="username" placeholder="Username" required>
+<input type="email" name="email" placeholder="Email" required>
+<input type="password" name="password" placeholder="Password" required>
+
+<button>Register</button>
+</form>
+
+<hr>
+
+<form action="/login" method="post">
+<input type="email" name="email" placeholder="Email">
+<input type="password" name="password" placeholder="Password">
+
+<button>Login</button>
+</form>
+
+</div>
+
+<script>
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+
+for(let i=0;i<120;i++){
+    particles.push({
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+        dx:(Math.random()-0.5)*1,
+        dy:(Math.random()-0.5)*1
+    });
+}
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    particles.forEach(p=>{
+        p.x+=p.dx;
+        p.y+=p.dy;
+
+        ctx.fillStyle="#00ffcc";
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,2,0,Math.PI*2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
