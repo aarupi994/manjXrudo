@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 bcrypt
-python-multipart
 jinja2
-requests
+python-multipart
+pymongo
+dnspython
