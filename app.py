@@ -27,10 +27,15 @@ def save(data):
 # Block temp emails
 blocked = ["tempmail", "10min", "mailinator"]
 
-# ✅ HOME PAGE (FIXED)
+# ✅ HOME PAGE (FINAL FIXED)
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse(request=request, name="register.html")
+    # Context ko alag se define karna sabse safe hai
+    return templates.TemplateResponse(
+        name="register.html", 
+        context={"request": request}
+    )
+
 
 # ✅ REGISTER
 @app.post("/register")
