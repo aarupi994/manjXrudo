@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import json
 import bcrypt
+import os
 
 app = FastAPI()
 
@@ -11,8 +12,10 @@ templates = Jinja2Templates(directory="templates")
 
 DB = "users.json"
 
-# Load users
+# Load users safely
 def load():
+    if not os.path.exists(DB):
+        return []
     try:
         with open(DB, "r") as f:
             return json.load(f)
@@ -27,54 +30,38 @@ def save(data):
 # Block temp emails
 blocked = ["tempmail", "10min", "mailinator"]
 
-# ✅ HOME PAGE (FINAL FIXED)
+# ✅ HOME PAGE
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    # Context ko alag se define karna sabse safe hai
     return templates.TemplateResponse(
         name="register.html", 
         context={"request": request}
     )
 
-
 # ✅ REGISTER
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
-
-    # Block fake email
     if any(x in email.lower() for x in blocked):
         return {"msg": "❌ Fake email not allowed"}
 
     db = load()
-
-    # Check duplicate
     for u in db:
         if u["email"] == email:
             return {"msg": "⚠️ Email already registered"}
 
-    # Hash password
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-    user = {
-        "username": username,
-        "email": email,
-        "password": hashed
-    }
-
+    user = {"username": username, "email": email, "password": hashed}
+    
     db.append(user)
     save(db)
-
     return {"msg": "✅ Registered Successfully"}
 
-# ✅ LOGIN (basic)
+# ✅ LOGIN
 @app.post("/login")
 def login(email: str = Form(...), password: str = Form(...)):
-
     db = load()
-
     for u in db:
         if u["email"] == email:
             if bcrypt.checkpw(password.encode(), u["password"].encode()):
                 return {"msg": "✅ Login Success"}
-
     return {"msg": "❌ Invalid Email or Password"}
