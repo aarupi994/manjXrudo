@@ -30,7 +30,7 @@ blocked = ["tempmail", "10min", "mailinator"]
 # ✅ HOME PAGE (FIXED)
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="register.html")
 
 # ✅ REGISTER
 @app.post("/register")
