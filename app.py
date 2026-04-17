@@ -49,7 +49,7 @@ def send_email_otp(receiver_email, otp):
     msg["To"] = receiver_email
 
     try:
-        server = smtplib.SMTP("smtp.mail.yahoo.com", 587)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(sender_email, app_password)
         server.sendmail(sender_email, receiver_email, msg.as_string())
