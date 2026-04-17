@@ -1,29 +1,20 @@
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-import json, bcrypt, random, os
+import bcrypt, random
 import smtplib
 from email.mime.text import MIMEText
+from pymongo import MongoClient
+
+# ================== MONGODB ==================
+MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/?appName=Rudo"
+
+client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=5000)
+db = client["manjxrudo"]
+users_collection = db["users"]
 
 app = FastAPI()
-
 templates = Jinja2Templates(directory="templates")
-
-DB = "users.json"
-
-# ================== DATABASE ==================
-def load():
-    if not os.path.exists(DB):
-        return []
-    try:
-        with open(DB, "r") as f:
-            return json.load(f)
-    except:
-        return []
-
-def save(data):
-    with open(DB, "w") as f:
-        json.dump(data, f, indent=4)
 
 # ================== SECURITY ==================
 blocked = ["tempmail", "10min", "mailinator"]
@@ -37,8 +28,8 @@ def generate_otp():
 # ================== EMAIL FUNCTION ==================
 def send_email_otp(receiver_email, otp):
 
-    sender_email = "rudowner1@gmail.com"        # 🔁 change this
-    app_password = "efyg ourp oavj iikx"     # 🔁 change this
+    sender_email = "rudowner1@gmail.com"
+    app_password = "efygourpoavjiikx"  # ❗ no spaces
 
     subject = "ManjXrudo OTP Verification"
     body = f"Your OTP is: {otp}"
@@ -85,10 +76,10 @@ def verify_otp(email: str = Form(...), otp: str = Form(...)):
 
     if email in email_otps and email_otps[email] == otp:
         verified_emails.add(email)
+        del email_otps[email]   # 🔥 IMPORTANT
         return {"msg": "✅ Email Verified"}
 
     return {"msg": "❌ Invalid OTP"}
-
 # ================== REGISTER ==================
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
@@ -96,11 +87,9 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
     if email not in verified_emails:
         return {"msg": "⚠️ Verify email first"}
 
-    db = load()
-
-    for u in db:
-        if u["email"] == email:
-            return {"msg": "⚠️ Email already registered"}
+    # Check duplicate
+    if users_collection.find_one({"email": email}):
+        return {"msg": "⚠️ Email already registered"}
 
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
@@ -110,8 +99,9 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
         "password": hashed
     }
 
-    db.append(user)
-    save(db)
+    users_collection.insert_one(user)
+
+    verified_emails.discard(email)   # ✅ YAHI Sahi jagah hai
 
     return {"msg": "✅ Registered Successfully"}
 
@@ -119,11 +109,12 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 @app.post("/login")
 def login(email: str = Form(...), password: str = Form(...)):
 
-    db = load()
+    try:
+        user = users_collection.find_one({"email": email})
+    except:
+        return {"msg": "⚠️ Server error, try again later"}
 
-    for u in db:
-        if u["email"] == email:
-            if bcrypt.checkpw(password.encode(), u["password"].encode()):
-                return {"msg": "✅ Login Success"}
+    if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
+        return {"msg": "✅ Login Success"}
 
     return {"msg": "❌ Invalid Email or Password"}
