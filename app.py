@@ -2,6 +2,8 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import json, bcrypt, random, os
+import smtplib
+from email.mime.text import MIMEText
 
 app = FastAPI()
 
@@ -32,10 +34,36 @@ verified_emails = set()
 def generate_otp():
     return str(random.randint(100000, 999999))
 
+# ================== EMAIL FUNCTION ==================
+def send_email_otp(receiver_email, otp):
+
+    sender_email = "rudowner1@gmail.com"        # 🔁 change this
+    app_password = "efyg ourp oavj iikx"     # 🔁 change this
+
+    subject = "ManjXrudo OTP Verification"
+    body = f"Your OTP is: {otp}"
+
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+
+    try:
+        server = smtplib.SMTP("smtp.mail.yahoo.com", 587)
+        server.starttls()
+        server.login(sender_email, app_password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print("Email Error:", e)
+        return False
+
 # ================== HOME ==================
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(request=request, name="register.html")
+
 # ================== SEND OTP ==================
 @app.post("/send-otp")
 def send_otp(email: str = Form(...)):
@@ -46,9 +74,10 @@ def send_otp(email: str = Form(...)):
     otp = generate_otp()
     email_otps[email] = otp
 
-    print(f"🔥 OTP for {email} is {otp}")  # testing
-
-    return {"msg": "✅ OTP Sent (check server log)"}
+    if send_email_otp(email, otp):
+        return {"msg": "✅ OTP sent to your Email"}
+    else:
+        return {"msg": "❌ Email sending failed"}
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
