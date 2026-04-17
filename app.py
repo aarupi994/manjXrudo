@@ -35,8 +35,7 @@ def generate_otp():
 # ================== HOME ==================
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
-
+    return templates.TemplateResponse(request=request, name="register.html")
 # ================== SEND OTP ==================
 @app.post("/send-otp")
 def send_otp(email: str = Form(...)):
