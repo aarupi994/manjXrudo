@@ -1,89 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>ManjXrudo</title>
+<title>Register</title>
 
 <style>
 body{
     background:black;
     color:#00ffcc;
-    font-family:monospace;
     text-align:center;
+    font-family:monospace;
 }
+
 input,button{
+    margin:10px;
     padding:10px;
-    margin:5px;
+    width:80%;
     background:black;
+    border:2px solid #00ffcc;
     color:#00ffcc;
-    border:1px solid #00ffcc;
 }
-button{
-    cursor:pointer;
+
+button:hover{
+    background:#00ffcc;
+    color:black;
 }
 </style>
-
-<script>
-async function sendOTP(){
-    let email = document.getElementById("email").value;
-
-    let res = await fetch("/send-otp", {
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:`email=${email}`
-    });
-
-    let data = await res.json();
-    alert(data.msg);
-}
-
-async function verifyOTP(){
-    let email = document.getElementById("email").value;
-    let otp = document.getElementById("otp").value;
-
-    let res = await fetch("/verify-otp", {
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:`email=${email}&otp=${otp}`
-    });
-
-    let data = await res.json();
-    alert(data.msg);
-}
-</script>
-
 </head>
 
 <body>
 
-<h2>⚡ ManjXrudo ⚡</h2>
+<h2>⚡ Create Account</h2>
 
-<!-- EMAIL -->
-<input type="email" id="email" placeholder="Enter Email"><br>
-
-<button onclick="sendOTP()">Send OTP</button><br>
-
-<input type="text" id="otp" placeholder="Enter OTP"><br>
-
-<button onclick="verifyOTP()">Verify OTP</button>
-
-<hr>
-
-<h3>Register</h3>
 <form action="/register" method="post">
-<input type="text" name="username" placeholder="Username" required><br>
-<input type="email" name="email" placeholder="Same Email" required><br>
-<input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Register</button>
+<input name="username" placeholder="Username" required>
+<input name="email" placeholder="Email" required>
+<input name="password" type="password" placeholder="Password" required>
+<button>Create Account</button>
 </form>
 
-<hr>
+<h3>Enter OTP</h3>
+
+<form action="/verify-otp" method="post">
+<input name="email" placeholder="Same Email">
+<input name="otp" placeholder="OTP">
+<button>Verify</button>
+</form>
 
 <h3>Login</h3>
+
 <form action="/login" method="post">
-<input type="email" name="email" placeholder="Email"><br>
-<input type="password" name="password" placeholder="Password"><br>
-<button type="submit">Login</button>
+<input name="email" placeholder="Email">
+<input name="password" type="password" placeholder="Password">
+<button>Login</button>
 </form>
 
 </body>
