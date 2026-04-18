@@ -135,11 +135,14 @@ def dashboard(request: Request):
     username = user.get("username", "User")
     coins = user.get("coins", 0)
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "username": username,
-        "coins": coins
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "username": username,
+            "coins": coins
+        }
+    )
 
 # ================== EARN COIN ==================
 @app.post("/earn-coin")
