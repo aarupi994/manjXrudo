@@ -1,16 +1,15 @@
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-import bcrypt, random
+import bcrypt, random, time
 import smtplib
 from email.mime.text import MIMEText
 from pymongo import MongoClient
-from fastapi import Cookie
 
 # ================== MONGODB ==================
 MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/?appName=Rudo"
 
-client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=5000)
+client = MongoClient(MONGO_URL)
 db = client["manjxrudo"]
 users_collection = db["users"]
 
@@ -18,26 +17,20 @@ users_collection = db["users"]
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# ================== SECURITY ==================
-blocked = ["tempmail", "10min", "mailinator"]
-
+# ================== TEMP STORAGE ==================
 email_otps = {}
-verified_emails = set()
+pending_users = {}
 
+# ================== OTP ==================
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-# ================== EMAIL FUNCTION ==================
 def send_email_otp(receiver_email, otp):
-
     sender_email = "rudowner1@gmail.com"
     app_password = "efygourpoavjiikx"
 
-    subject = "ManjXrudo OTP Verification"
-    body = f"Your OTP is: {otp}"
-
-    msg = MIMEText(body)
-    msg["Subject"] = subject
+    msg = MIMEText(f"Your OTP is: {otp}")
+    msg["Subject"] = "OTP Verification"
     msg["From"] = sender_email
     msg["To"] = receiver_email
 
@@ -48,108 +41,93 @@ def send_email_otp(receiver_email, otp):
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
         return True
-    except Exception as e:
-        print("Email Error:", e)
+    except:
         return False
 
 # ================== HOME ==================
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse(request=request, name="register.html")
-
-# ================== SEND OTP ==================
-@app.post("/send-otp")
-def send_otp(email: str = Form(...)):
-
-    if any(x in email.lower() for x in blocked):
-        return {"msg": "❌ Temporary email not allowed"}
-
-    otp = generate_otp()
-    email_otps[email] = otp
-
-    if send_email_otp(email, otp):
-        return {"msg": "✅ OTP sent to your Email"}
-    else:
-        return {"msg": "❌ Email sending failed"}
-
-# ================== VERIFY OTP ==================
-@app.post("/verify-otp")
-def verify_otp(email: str = Form(...), otp: str = Form(...)):
-
-    if email in email_otps and email_otps[email] == otp:
-        verified_emails.add(email)
-        del email_otps[email]
-        return {"msg": "✅ Email Verified"}
-
-    return {"msg": "❌ Invalid OTP"}
+    return templates.TemplateResponse("register.html", {"request": request})
 
 # ================== REGISTER ==================
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
 
-    if email not in verified_emails:
-        return {"msg": "⚠️ Verify email first"}
-
+    # Email check
     if users_collection.find_one({"email": email}):
-        return {"msg": "⚠️ Email already registered"}
+        return {"msg": "❌ Email already registered"}
 
-    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    # Username check
+    if users_collection.find_one({"username": username}):
+        suggestion = username + str(random.randint(1000, 9999))
+        return {"msg": "❌ Username exists", "suggestion": suggestion}
 
-    user = {
+    otp = generate_otp()
+    email_otps[email] = otp
+
+    pending_users[email] = {
         "username": username,
-        "email": email,
-        "password": hashed,
-        "coins": 2
+        "password": password
     }
 
-    users_collection.insert_one(user)
-    verified_emails.discard(email)
+    send_email_otp(email, otp)
 
-    return {"msg": "✅ Registered Successfully"}
+    return {"msg": "✅ OTP sent"}
+
+# ================== VERIFY OTP ==================
+@app.post("/verify-otp")
+def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response):
+
+    if email in email_otps and email_otps[email] == otp:
+
+        data = pending_users.get(email)
+
+        hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
+
+        user = {
+            "username": data["username"],
+            "email": email,
+            "password": hashed,
+            "coins": 2
+        }
+
+        users_collection.insert_one(user)
+
+        del email_otps[email]
+        del pending_users[email]
+
+        # AUTO LOGIN
+        response.set_cookie(key="user", value=email, max_age=86400)
+
+        return RedirectResponse("/dashboard", status_code=303)
+
+    return {"msg": "❌ Invalid OTP"}
 
 # ================== LOGIN ==================
 @app.post("/login")
-def login(email: str = Form(...), password: str = Form(...)):
+def login(email: str = Form(...), password: str = Form(...), response: Response):
 
     user = users_collection.find_one({"email": email})
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-        response = RedirectResponse(url="/dashboard", status_code=303)
-        response.set_cookie(key="user_email", value=email)
-        return response
+        response.set_cookie(key="user", value=email, max_age=86400)
+        return RedirectResponse("/dashboard", status_code=303)
 
-    return {"msg": "❌ Invalid Email or Password"}
+    return {"msg": "❌ Invalid login"}
+
 # ================== DASHBOARD ==================
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, user_email: str = Cookie(None)):
+def dashboard(request: Request):
 
-    if not user_email:
-        return HTMLResponse("❌ Please login first")
+    email = request.cookies.get("user")
 
-    user = users_collection.find_one({"email": user_email})
+    if not email:
+        return RedirectResponse("/")
 
-    if not user:
-        return HTMLResponse("❌ User not found")
+    user = users_collection.find_one({"email": email})
 
-    return templates.TemplateResponse(
-        request=request,
-        name="dashboard.html",
-        context={
-            "username": user.get("username"),
-            "coins": user.get("coins", 0)
-        }
-    )
-
-# ================== EARN COIN ==================
-@app.post("/earn-coin")
-def earn_coin(user_email: str = Cookie(None)):
-
-    if not user_email:
-        return RedirectResponse(url="/", status_code=303)
-
-    users_collection.update_one(
-        {"email": user_email},
-        {"$inc": {"coins": 1}}
-    )
-
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "username": user["username"],
+        "coins": user.get("coins", 0)
+    })
