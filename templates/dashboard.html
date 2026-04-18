@@ -1,17 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+<title>Dashboard</title>
+
+<style>
+body{
+    margin:0;
+    background:black;
+    color:#00ffcc;
+    font-family:monospace;
+}
+
+/* Sidebar */
+.sidebar{
+    width:200px;
+    height:100vh;
+    background:#000;
+    border-right:2px solid #00ffcc;
+    position:fixed;
+}
+
+.sidebar h2{
+    text-align:center;
+}
+
+.sidebar a{
+    display:block;
+    padding:15px;
+    color:#00ffcc;
+    text-decoration:none;
+}
+
+.sidebar a:hover{
+    background:#00ffcc;
+    color:black;
+}
+
+/* Main */
+.main{
+    margin-left:200px;
+    padding:20px;
+}
+
+.box{
+    border:2px solid #00ffcc;
+    padding:20px;
+    margin-top:20px;
+    box-shadow:0 0 15px #00ffcc;
+}
+</style>
 </head>
+
 <body>
+
+<div class="sidebar">
+    <h2>⚡ Panel</h2>
+    <a href="#">Dashboard</a>
+    <a href="#">Earn Coin</a>
+    <a href="#">Profile</a>
+</div>
+
+<div class="main">
 
 <h2>Welcome {{username}}</h2>
 
-<p>Coins: {{coins}}</p>
+<div class="box">
+    <h3>💰 Coins: {{coins}}</h3>
+</div>
 
-<form action="/earn-coin" method="post">
-    <button type="submit">Watch Ad → Earn 1 Coin</button>
-</form>
+<div class="box">
+    <a href="/start-ad">
+        <button>Watch Ads → Earn</button>
+    </a>
+</div>
+
+</div>
 
 </body>
 </html>
