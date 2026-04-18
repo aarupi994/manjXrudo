@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import bcrypt, random
 import smtplib
@@ -13,6 +13,7 @@ client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=5000)
 db = client["manjxrudo"]
 users_collection = db["users"]
 
+# ================== APP ==================
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
@@ -29,7 +30,7 @@ def generate_otp():
 def send_email_otp(receiver_email, otp):
 
     sender_email = "rudowner1@gmail.com"
-    app_password = "efygourpoavjiikx"  # ❗ no spaces
+    app_password = "efygourpoavjiikx"
 
     subject = "ManjXrudo OTP Verification"
     body = f"Your OTP is: {otp}"
@@ -76,10 +77,11 @@ def verify_otp(email: str = Form(...), otp: str = Form(...)):
 
     if email in email_otps and email_otps[email] == otp:
         verified_emails.add(email)
-        del email_otps[email]   # 🔥 IMPORTANT
+        del email_otps[email]
         return {"msg": "✅ Email Verified"}
 
     return {"msg": "❌ Invalid OTP"}
+
 # ================== REGISTER ==================
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
@@ -87,7 +89,6 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
     if email not in verified_emails:
         return {"msg": "⚠️ Verify email first"}
 
-    # Check duplicate
     if users_collection.find_one({"email": email}):
         return {"msg": "⚠️ Email already registered"}
 
@@ -96,12 +97,12 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
     user = {
         "username": username,
         "email": email,
-        "password": hashed
+        "password": hashed,
+        "coins": 2
     }
 
     users_collection.insert_one(user)
-
-    verified_emails.discard(email)   # ✅ YAHI Sahi jagah hai
+    verified_emails.discard(email)
 
     return {"msg": "✅ Registered Successfully"}
 
@@ -115,6 +116,26 @@ def login(email: str = Form(...), password: str = Form(...)):
         return {"msg": "⚠️ Server error, try again later"}
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-        return {"msg": "✅ Login Success"}
+        return RedirectResponse(url="/dashboard", status_code=303)
 
     return {"msg": "❌ Invalid Email or Password"}
+
+# ================== DASHBOARD ==================
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request):
+
+    user = users_collection.find_one()  # TEMP
+
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "username": user["username"],
+        "coins": user.get("coins", 0)
+    })
+
+# ================== EARN COIN ==================
+@app.post("/earn-coin")
+def earn_coin():
+
+    users_collection.update_one({}, {"$inc": {"coins": 1}})
+
+    return RedirectResponse(url="/dashboard", status_code=303)
