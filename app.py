@@ -5,6 +5,7 @@ import bcrypt, random
 import smtplib
 from email.mime.text import MIMEText
 from pymongo import MongoClient
+from fastapi import Cookie
 
 # ================== MONGODB ==================
 MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/?appName=Rudo"
@@ -110,44 +111,45 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 @app.post("/login")
 def login(email: str = Form(...), password: str = Form(...)):
 
-    try:
-        user = users_collection.find_one({"email": email})
-    except:
-        return {"msg": "⚠️ Server error, try again later"}
+    user = users_collection.find_one({"email": email})
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-        return RedirectResponse(url="/dashboard", status_code=303)
+        response = RedirectResponse(url="/dashboard", status_code=303)
+        response.set_cookie(key="user_email", value=email)
+        return response
 
     return {"msg": "❌ Invalid Email or Password"}
-
 # ================== DASHBOARD ==================
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
+def dashboard(request: Request, user_email: str = Cookie(None)):
 
-    try:
-        user = users_collection.find_one()
-    except:
-        return HTMLResponse("❌ Database error")
+    if not user_email:
+        return HTMLResponse("❌ Please login first")
+
+    user = users_collection.find_one({"email": user_email})
 
     if not user:
-        return HTMLResponse("❌ No user found. Please register first.")
-
-    username = user.get("username", "User")
-    coins = user.get("coins", 0)
+        return HTMLResponse("❌ User not found")
 
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
         context={
-            "username": username,
-            "coins": coins
+            "username": user.get("username"),
+            "coins": user.get("coins", 0)
         }
     )
 
 # ================== EARN COIN ==================
 @app.post("/earn-coin")
-def earn_coin():
+def earn_coin(user_email: str = Cookie(None)):
 
-    users_collection.update_one({}, {"$inc": {"coins": 1}})
+    if not user_email:
+        return RedirectResponse(url="/", status_code=303)
+
+    users_collection.update_one(
+        {"email": user_email},
+        {"$inc": {"coins": 1}}
+    )
 
     return RedirectResponse(url="/dashboard", status_code=303)
