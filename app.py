@@ -41,7 +41,8 @@ def send_email_otp(receiver_email, otp):
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
         return True
-    except:
+    except Exception as e:
+        print("Email Error:", e)
         return False
 
 # ================== HOME ==================
@@ -53,11 +54,9 @@ def home(request: Request):
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
 
-    # Email check
     if users_collection.find_one({"email": email}):
         return {"msg": "❌ Email already registered"}
 
-    # Username check
     if users_collection.find_one({"username": username}):
         suggestion = username + str(random.randint(1000, 9999))
         return {"msg": "❌ Username exists", "suggestion": suggestion}
@@ -76,11 +75,14 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
-def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response):
+def verify_otp(response: Response, email: str = Form(...), otp: str = Form(...)):
 
     if email in email_otps and email_otps[email] == otp:
 
         data = pending_users.get(email)
+
+        if not data:
+            return {"msg": "❌ Session expired"}
 
         hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
 
@@ -97,21 +99,22 @@ def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response)
         del pending_users[email]
 
         # AUTO LOGIN
-        response.set_cookie(key="user", value=email, max_age=86400)
-
-        return RedirectResponse("/dashboard", status_code=303)
+        res = RedirectResponse("/dashboard", status_code=303)
+        res.set_cookie(key="user", value=email, max_age=86400)
+        return res
 
     return {"msg": "❌ Invalid OTP"}
 
 # ================== LOGIN ==================
 @app.post("/login")
-def login(email: str = Form(...), password: str = Form(...), response: Response):
+def login(response: Response, email: str = Form(...), password: str = Form(...)):
 
     user = users_collection.find_one({"email": email})
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-        response.set_cookie(key="user", value=email, max_age=86400)
-        return RedirectResponse("/dashboard", status_code=303)
+        res = RedirectResponse("/dashboard", status_code=303)
+        res.set_cookie(key="user", value=email, max_age=86400)
+        return res
 
     return {"msg": "❌ Invalid login"}
 
@@ -126,9 +129,12 @@ def dashboard(request: Request):
 
     user = users_collection.find_one({"email": email})
 
+    if not user:
+        return RedirectResponse("/")
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "username": user["username"],
+        "username": user.get("username", "User"),
         "coins": user.get("coins", 0)
     })
 
@@ -150,12 +156,10 @@ def start_ad(request: Request):
 
     return RedirectResponse("/ads", status_code=303)
 
-
 # ================== ADS PAGE ==================
 @app.get("/ads", response_class=HTMLResponse)
 def ads_page(request: Request):
     return templates.TemplateResponse("ads.html", {"request": request})
-
 
 # ================== COMPLETE AD ==================
 @app.get("/complete-ad")
@@ -168,12 +172,15 @@ def complete_ad(request: Request):
 
     user = users_collection.find_one({"email": email})
 
+    if not user:
+        return RedirectResponse("/")
+
     start_time = user.get("ad_start_time", 0)
     now = int(time.time())
 
     watch_time = now - start_time
 
-    if watch_time >= 8:   # ⏱️ 8 sec min watch
+    if watch_time >= 8:
         users_collection.update_one(
             {"email": email},
             {"$inc": {"coins": 1}}
