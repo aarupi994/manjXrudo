@@ -54,9 +54,11 @@ def home(request: Request):
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
 
+    # Email check
     if users_collection.find_one({"email": email}):
         return {"msg": "❌ Email already registered"}
 
+    # Username check
     if users_collection.find_one({"username": username}):
         suggestion = username + str(random.randint(1000, 9999))
         return {"msg": "❌ Username exists", "suggestion": suggestion}
@@ -75,14 +77,11 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
-def verify_otp(response: Response, email: str = Form(...), otp: str = Form(...)):
+def verify_otp(email: str = Form(...), otp: str = Form(...)):
 
     if email in email_otps and email_otps[email] == otp:
 
         data = pending_users.get(email)
-
-        if not data:
-            return {"msg": "❌ Session expired"}
 
         hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
 
@@ -98,23 +97,24 @@ def verify_otp(response: Response, email: str = Form(...), otp: str = Form(...))
         del email_otps[email]
         del pending_users[email]
 
-        # AUTO LOGIN
-        res = RedirectResponse("/dashboard", status_code=303)
-        res.set_cookie(key="user", value=email, max_age=86400)
-        return res
+        # ✅ FIXED COOKIE
+        response = RedirectResponse("/dashboard", status_code=303)
+        response.set_cookie(key="user", value=email, max_age=86400)
+
+        return response
 
     return {"msg": "❌ Invalid OTP"}
 
 # ================== LOGIN ==================
 @app.post("/login")
-def login(response: Response, email: str = Form(...), password: str = Form(...)):
+def login(email: str = Form(...), password: str = Form(...)):
 
     user = users_collection.find_one({"email": email})
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-        res = RedirectResponse("/dashboard", status_code=303)
-        res.set_cookie(key="user", value=email, max_age=86400)
-        return res
+        response = RedirectResponse("/dashboard", status_code=303)
+        response.set_cookie(key="user", value=email, max_age=86400)
+        return response
 
     return {"msg": "❌ Invalid login"}
 
