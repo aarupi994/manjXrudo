@@ -124,12 +124,21 @@ def login(email: str = Form(...), password: str = Form(...)):
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
 
-    user = users_collection.find_one()  # TEMP
+    try:
+        user = users_collection.find_one()
+    except:
+        return HTMLResponse("❌ Database error")
+
+    if not user:
+        return HTMLResponse("❌ No user found. Please register first.")
+
+    username = user.get("username", "User")
+    coins = user.get("coins", 0)
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "username": user["username"],
-        "coins": user.get("coins", 0)
+        "username": username,
+        "coins": coins
     })
 
 # ================== EARN COIN ==================
