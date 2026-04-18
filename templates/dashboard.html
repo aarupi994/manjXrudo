@@ -3,6 +3,8 @@
 <head>
 <title>Dashboard</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 body{
     margin:0;
@@ -29,6 +31,7 @@ body{
     padding:15px;
     color:#00ffcc;
     text-decoration:none;
+    transition:0.3s;
 }
 
 .sidebar a:hover{
@@ -42,11 +45,61 @@ body{
     padding:20px;
 }
 
+/* Box */
 .box{
     border:2px solid #00ffcc;
     padding:20px;
     margin-top:20px;
     box-shadow:0 0 15px #00ffcc;
+    border-radius:10px;
+}
+
+/* Button */
+.btn{
+    padding:12px 25px;
+    border:2px solid #00ffcc;
+    background:black;
+    color:#00ffcc;
+    cursor:pointer;
+    transition:0.3s;
+    font-size:16px;
+}
+
+.btn:hover{
+    background:#00ffcc;
+    color:black;
+    box-shadow:0 0 20px #00ffcc;
+    transform:scale(1.1);
+}
+
+/* Responsive (Mobile) */
+@media(max-width:768px){
+    .sidebar{
+        width:100%;
+        height:auto;
+        position:relative;
+        display:flex;
+        justify-content:space-around;
+    }
+
+    .main{
+        margin-left:0;
+    }
+}
+
+/* Snow Effect */
+.snow{
+    position:fixed;
+    top:0;
+    color:white;
+    animation:fall linear;
+}
+
+@keyframes fall{
+    to{
+        transform:translateY(100vh);
+        opacity:0;
+    }
 }
 </style>
 </head>
@@ -55,8 +108,8 @@ body{
 
 <div class="sidebar">
     <h2>⚡ Panel</h2>
-    <a href="#">Dashboard</a>
-    <a href="#">Earn Coin</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/start-ad">Earn Coin</a>
     <a href="#">Profile</a>
 </div>
 
@@ -75,6 +128,20 @@ body{
 </div>
 
 </div>
+
+<!-- Snow Animation -->
+<script>
+setInterval(()=>{
+    let snow=document.createElement("div");
+    snow.className="snow";
+    snow.innerHTML="❄️";
+    snow.style.left=Math.random()*window.innerWidth+"px";
+    snow.style.animationDuration=(Math.random()*3+2)+"s";
+    document.body.appendChild(snow);
+
+    setTimeout(()=>snow.remove(),5000);
+},200);
+</script>
 
 </body>
 </html>
