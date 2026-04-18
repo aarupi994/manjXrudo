@@ -131,3 +131,53 @@ def dashboard(request: Request):
         "username": user["username"],
         "coins": user.get("coins", 0)
     })
+
+# ================== START AD ==================
+@app.get("/start-ad")
+def start_ad(request: Request):
+
+    email = request.cookies.get("user")
+
+    if not email:
+        return RedirectResponse("/")
+
+    current_time = int(time.time())
+
+    users_collection.update_one(
+        {"email": email},
+        {"$set": {"ad_start_time": current_time}}
+    )
+
+    return RedirectResponse("/ads", status_code=303)
+
+
+# ================== ADS PAGE ==================
+@app.get("/ads", response_class=HTMLResponse)
+def ads_page(request: Request):
+    return templates.TemplateResponse("ads.html", {"request": request})
+
+
+# ================== COMPLETE AD ==================
+@app.get("/complete-ad")
+def complete_ad(request: Request):
+
+    email = request.cookies.get("user")
+
+    if not email:
+        return RedirectResponse("/")
+
+    user = users_collection.find_one({"email": email})
+
+    start_time = user.get("ad_start_time", 0)
+    now = int(time.time())
+
+    watch_time = now - start_time
+
+    if watch_time >= 8:   # ⏱️ 8 sec min watch
+        users_collection.update_one(
+            {"email": email},
+            {"$inc": {"coins": 1}}
+        )
+        return RedirectResponse("/dashboard", status_code=303)
+    else:
+        return HTMLResponse("<h2 style='color:red'>❌ Mission Failed! Watch full ad</h2>")
