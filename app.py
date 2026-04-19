@@ -1,11 +1,18 @@
 from fastapi import FastAPI, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import bcrypt, random, time
 import smtplib
 from email.mime.text import MIMEText
 from pymongo import MongoClient
-from fastapi.staticfiles import StaticFiles
+
+# ================== APP ==================
+app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 # ================== MONGODB ==================
 MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/?appName=Rudo"
@@ -13,10 +20,6 @@ MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/
 client = MongoClient(MONGO_URL)
 db = client["manjxrudo"]
 users_collection = db["users"]
-
-# ================== APP ==================
-app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 
 # ================== TEMP STORAGE ==================
 email_otps = {}
@@ -51,18 +54,24 @@ def send_email_otp(receiver_email, otp):
 def home(request: Request):
     return templates.TemplateResponse(
         request=request,
-        name="register.html"
+        name="auth.html"
+    )
+
+# ================== OTP PAGE ==================
+@app.get("/otp", response_class=HTMLResponse)
+def otp_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="otp.html"
     )
 
 # ================== REGISTER ==================
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
 
-    # Email check
     if users_collection.find_one({"email": email}):
         return {"msg": "❌ Email already registered"}
 
-    # Username check
     if users_collection.find_one({"username": username}):
         suggestion = username + str(random.randint(1000, 9999))
         return {"msg": "❌ Username exists", "suggestion": suggestion}
@@ -77,11 +86,11 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 
     send_email_otp(email, otp)
 
-    return {"msg": "✅ OTP sent"}
+    return RedirectResponse(f"/otp?email={email}", status_code=303)
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
-def verify_otp(request: Request, response: Response, email: str = Form(...), otp: str = Form(...)):
+def verify_otp(response: Response, email: str = Form(...), otp: str = Form(...)):
 
     if email in email_otps and email_otps[email] == otp:
 
@@ -106,9 +115,8 @@ def verify_otp(request: Request, response: Response, email: str = Form(...), otp
         del email_otps[email]
         del pending_users[email]
 
-        # AUTO LOGIN
         res = RedirectResponse("/dashboard", status_code=303)
-        res.set_cookie(key="user", value=email, max_age=86400)
+        res.set_cookie("user", email, max_age=86400)
 
         return res
 
@@ -122,7 +130,7 @@ def login(email: str = Form(...), password: str = Form(...)):
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
         res = RedirectResponse("/dashboard", status_code=303)
-        res.set_cookie(key="user", value=email, max_age=86400)
+        res.set_cookie("user", email, max_age=86400)
         return res
 
     return {"msg": "❌ Invalid login"}
@@ -186,6 +194,9 @@ def complete_ad(request: Request):
 
     user = users_collection.find_one({"email": email})
 
+    if not user:
+        return RedirectResponse("/")
+
     watch_time = int(time.time()) - user.get("ad_start_time", 0)
 
     if watch_time >= 8:
@@ -203,6 +214,3 @@ def logout():
     res = RedirectResponse("/")
     res.delete_cookie("user")
     return res
-
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
