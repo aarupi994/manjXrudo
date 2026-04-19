@@ -41,8 +41,7 @@ def send_email_otp(receiver_email, otp):
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
         return True
-    except Exception as e:
-        print("Email Error:", e)
+    except:
         return False
 
 # ================== HOME ==================
@@ -54,11 +53,9 @@ def home(request: Request):
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
 
-    # Email check
     if users_collection.find_one({"email": email}):
         return {"msg": "❌ Email already registered"}
 
-    # Username check
     if users_collection.find_one({"username": username}):
         suggestion = username + str(random.randint(1000, 9999))
         return {"msg": "❌ Username exists", "suggestion": suggestion}
@@ -77,7 +74,7 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
-def verify_otp(email: str = Form(...), otp: str = Form(...)):
+def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response = None):
 
     if email in email_otps and email_otps[email] == otp:
 
@@ -97,24 +94,23 @@ def verify_otp(email: str = Form(...), otp: str = Form(...)):
         del email_otps[email]
         del pending_users[email]
 
-        # ✅ FIXED COOKIE
-        response = RedirectResponse("/dashboard", status_code=303)
-        response.set_cookie(key="user", value=email, max_age=86400)
+        res = RedirectResponse("/dashboard", status_code=303)
+        res.set_cookie(key="user", value=email, max_age=86400)
 
-        return response
+        return res
 
     return {"msg": "❌ Invalid OTP"}
 
 # ================== LOGIN ==================
 @app.post("/login")
-def login(email: str = Form(...), password: str = Form(...)):
+def login(response: Response, email: str = Form(...), password: str = Form(...)):
 
     user = users_collection.find_one({"email": email})
 
     if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-        response = RedirectResponse("/dashboard", status_code=303)
-        response.set_cookie(key="user", value=email, max_age=86400)
-        return response
+        res = RedirectResponse("/dashboard", status_code=303)
+        res.set_cookie(key="user", value=email, max_age=86400)
+        return res
 
     return {"msg": "❌ Invalid login"}
 
@@ -130,11 +126,11 @@ def dashboard(request: Request):
     user = users_collection.find_one({"email": email})
 
     if not user:
-        return RedirectResponse("/")
+        return HTMLResponse("❌ User not found")
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "username": user.get("username", "User"),
+        "username": user["username"],
         "coins": user.get("coins", 0)
     })
 
@@ -171,9 +167,6 @@ def complete_ad(request: Request):
         return RedirectResponse("/")
 
     user = users_collection.find_one({"email": email})
-
-    if not user:
-        return RedirectResponse("/")
 
     start_time = user.get("ad_start_time", 0)
     now = int(time.time())
