@@ -5,6 +5,7 @@ import bcrypt, random, time
 import smtplib
 from email.mime.text import MIMEText
 from pymongo import MongoClient
+from fastapi.staticfiles import StaticFiles
 
 # ================== MONGODB ==================
 MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/?appName=Rudo"
@@ -41,21 +42,27 @@ def send_email_otp(receiver_email, otp):
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
         return True
-    except:
+    except Exception as e:
+        print("Email Error:", e)
         return False
 
 # ================== HOME ==================
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="register.html"
+    )
 
 # ================== REGISTER ==================
 @app.post("/register")
 def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
 
+    # Email check
     if users_collection.find_one({"email": email}):
         return {"msg": "❌ Email already registered"}
 
+    # Username check
     if users_collection.find_one({"username": username}):
         suggestion = username + str(random.randint(1000, 9999))
         return {"msg": "❌ Username exists", "suggestion": suggestion}
@@ -74,11 +81,14 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
-def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response = None):
+def verify_otp(request: Request, response: Response, email: str = Form(...), otp: str = Form(...)):
 
     if email in email_otps and email_otps[email] == otp:
 
         data = pending_users.get(email)
+
+        if not data:
+            return {"msg": "❌ Session expired"}
 
         hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
 
@@ -86,7 +96,9 @@ def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response 
             "username": data["username"],
             "email": email,
             "password": hashed,
-            "coins": 2
+            "coins": 2,
+            "theme": "default",
+            "ad_start_time": 0
         }
 
         users_collection.insert_one(user)
@@ -94,6 +106,7 @@ def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response 
         del email_otps[email]
         del pending_users[email]
 
+        # AUTO LOGIN
         res = RedirectResponse("/dashboard", status_code=303)
         res.set_cookie(key="user", value=email, max_age=86400)
 
@@ -103,7 +116,7 @@ def verify_otp(email: str = Form(...), otp: str = Form(...), response: Response 
 
 # ================== LOGIN ==================
 @app.post("/login")
-def login(response: Response, email: str = Form(...), password: str = Form(...)):
+def login(email: str = Form(...), password: str = Form(...)):
 
     user = users_collection.find_one({"email": email})
 
@@ -126,13 +139,17 @@ def dashboard(request: Request):
     user = users_collection.find_one({"email": email})
 
     if not user:
-        return HTMLResponse("❌ User not found")
+        return RedirectResponse("/")
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "username": user["username"],
-        "coins": user.get("coins", 0)
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "username": user["username"],
+            "coins": user.get("coins", 0),
+            "theme": user.get("theme", "default")
+        }
+    )
 
 # ================== START AD ==================
 @app.get("/start-ad")
@@ -143,11 +160,9 @@ def start_ad(request: Request):
     if not email:
         return RedirectResponse("/")
 
-    current_time = int(time.time())
-
     users_collection.update_one(
         {"email": email},
-        {"$set": {"ad_start_time": current_time}}
+        {"$set": {"ad_start_time": int(time.time())}}
     )
 
     return RedirectResponse("/ads", status_code=303)
@@ -155,7 +170,10 @@ def start_ad(request: Request):
 # ================== ADS PAGE ==================
 @app.get("/ads", response_class=HTMLResponse)
 def ads_page(request: Request):
-    return templates.TemplateResponse("ads.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="ads.html"
+    )
 
 # ================== COMPLETE AD ==================
 @app.get("/complete-ad")
@@ -168,10 +186,7 @@ def complete_ad(request: Request):
 
     user = users_collection.find_one({"email": email})
 
-    start_time = user.get("ad_start_time", 0)
-    now = int(time.time())
-
-    watch_time = now - start_time
+    watch_time = int(time.time()) - user.get("ad_start_time", 0)
 
     if watch_time >= 8:
         users_collection.update_one(
@@ -180,4 +195,14 @@ def complete_ad(request: Request):
         )
         return RedirectResponse("/dashboard", status_code=303)
     else:
-        return HTMLResponse("<h2 style='color:red'>❌ Mission Failed! Watch full ad</h2>")
+        return HTMLResponse("<h2 style='color:red'>❌ Watch full ad</h2>")
+
+# ================== LOGOUT ==================
+@app.get("/logout")
+def logout():
+    res = RedirectResponse("/")
+    res.delete_cookie("user")
+    return res
+
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
