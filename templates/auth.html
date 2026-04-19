@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Auth</title>
+<title>ManjXrudo</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 
@@ -9,45 +9,36 @@
 
 <div class="container">
 
-<h2>⚡ ManjXrudo</h2>
+    <h1 class="logo">⚡ ManjXrudo ⚡</h1>
 
-<div class="tabs">
-<button onclick="showLogin()">Login</button>
-<button onclick="showRegister()">Register</button>
+    <!-- REGISTER -->
+    <div class="card">
+        <h2>Create Account</h2>
+
+        <form action="/register" method="post">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+
+            <button>Create Account</button>
+        </form>
+
+        <p id="suggestion"></p>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="card">
+        <h2>Login</h2>
+
+        <form action="/login" method="post">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+
+            <button>Login</button>
+        </form>
+    </div>
+
 </div>
-
-<!-- LOGIN -->
-<div id="login">
-<form action="/login" method="post">
-<input type="email" name="email" placeholder="Email" required>
-<input type="password" name="password" placeholder="Password" required>
-<button type="submit">Login</button>
-</form>
-</div>
-
-<!-- REGISTER -->
-<div id="register" style="display:none;">
-<form action="/register" method="post">
-<input type="text" name="username" placeholder="Username" required>
-<input type="email" name="email" placeholder="Email" required>
-<input type="password" name="password" placeholder="Password" required>
-<button type="submit">Create Account</button>
-</form>
-</div>
-
-</div>
-
-<script>
-function showLogin(){
-    document.getElementById("login").style.display="block";
-    document.getElementById("register").style.display="none";
-}
-
-function showRegister(){
-    document.getElementById("login").style.display="none";
-    document.getElementById("register").style.display="block";
-}
-</script>
 
 </body>
 </html>
