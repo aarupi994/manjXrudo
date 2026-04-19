@@ -1,15 +1,28 @@
 <!DOCTYPE html>
 <html>
-<head><title>OTP</title></head>
+<head>
+<title>Verify OTP</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
 <body>
 
-<h2>Enter OTP</h2>
+<div class="container">
 
-<form action="/verify-otp" method="post">
-<input type="email" name="email" placeholder="Email" required>
-<input type="text" name="otp" placeholder="OTP" required>
-<button type="submit">Verify</button>
-</form>
+    <div class="card">
+        <h2>Verify OTP</h2>
+
+        <p>Email: {{email[:3]}}******@{{email.split('@')[1]}}</p>
+
+        <form action="/verify-otp" method="post">
+            <input type="hidden" name="email" value="{{email}}">
+            <input type="text" name="otp" placeholder="Enter OTP" required>
+
+            <button>Verify</button>
+        </form>
+    </div>
+
+</div>
 
 </body>
 </html>
