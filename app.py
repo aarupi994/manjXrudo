@@ -59,10 +59,11 @@ def home(request: Request):
 
 # ================== OTP PAGE ==================
 @app.get("/otp", response_class=HTMLResponse)
-def otp_page(request: Request):
+def otp_page(request: Request, email: str):
     return templates.TemplateResponse(
         request=request,
-        name="otp.html"
+        name="otp.html",
+        context={"email": email}
     )
 
 # ================== REGISTER ==================
@@ -214,3 +215,4 @@ def logout():
     res = RedirectResponse("/")
     res.delete_cookie("user")
     return res
+    
