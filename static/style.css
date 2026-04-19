@@ -1,80 +1,56 @@
 body{
     margin:0;
+    padding:0;
     background:black;
     color:#00ffcc;
     font-family:monospace;
-}
 
-/* SIDEBAR */
-.sidebar{
-    width:200px;
-    height:100vh;
-    position:fixed;
-    background:#000;
-    border-right:2px solid #00ffcc;
-}
-
-.sidebar h2{
-    text-align:center;
-}
-
-.sidebar a{
-    display:block;
-    padding:15px;
-    color:#00ffcc;
-    text-decoration:none;
-}
-
-.sidebar a:hover{
-    background:#00ffcc;
-    color:black;
-}
-
-/* MAIN */
-.main{
-    margin-left:200px;
-    padding:20px;
-}
-
-/* CARD */
-.card{
-    border:2px solid #00ffcc;
-    padding:20px;
-    margin-top:20px;
-    box-shadow:0 0 15px #00ffcc;
-    text-align:center;
-}
-
-/* BUTTON */
-.btn{
-    padding:15px;
-    background:#00ffcc;
-    border:none;
-    cursor:pointer;
-    font-size:16px;
-}
-
-/* ADS PAGE */
-.ads-box{
-    text-align:center;
-    margin-top:100px;
-}
-
-/* CIRCLE TIMER */
-.circle{
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    border:6px solid #00ffcc;
     display:flex;
     justify-content:center;
     align-items:center;
-    margin:20px auto;
-    font-size:30px;
-    animation: rotate 8s linear;
+    height:100vh;
 }
 
-@keyframes rotate{
-    from{transform:rotate(0deg);}
-    to{transform:rotate(360deg);}
+/* container */
+.container{
+    width:90%;
+    max-width:400px;
+    text-align:center;
+}
+
+/* logo */
+.logo{
+    margin-bottom:20px;
+}
+
+/* card */
+.card{
+    border:2px solid #00ffcc;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 0 15px #00ffcc;
+}
+
+/* inputs */
+input{
+    width:90%;
+    padding:10px;
+    margin:10px 0;
+    background:black;
+    border:1px solid #00ffcc;
+    color:#00ffcc;
+}
+
+/* button */
+button{
+    padding:10px 20px;
+    background:#00ffcc;
+    color:black;
+    border:none;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:white;
 }
