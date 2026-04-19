@@ -1,0 +1,23 @@
+body{
+    background:black;
+    color:#00ffcc;
+    font-family:monospace;
+    text-align:center;
+}
+
+input{
+    display:block;
+    margin:10px auto;
+    padding:10px;
+}
+
+button{
+    padding:10px;
+    background:#00ffcc;
+    border:none;
+    cursor:pointer;
+}
+
+.container{
+    margin-top:100px;
+}
