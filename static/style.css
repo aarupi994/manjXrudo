@@ -1,0 +1,80 @@
+body{
+    margin:0;
+    background:black;
+    color:#00ffcc;
+    font-family:monospace;
+}
+
+/* SIDEBAR */
+.sidebar{
+    width:200px;
+    height:100vh;
+    position:fixed;
+    background:#000;
+    border-right:2px solid #00ffcc;
+}
+
+.sidebar h2{
+    text-align:center;
+}
+
+.sidebar a{
+    display:block;
+    padding:15px;
+    color:#00ffcc;
+    text-decoration:none;
+}
+
+.sidebar a:hover{
+    background:#00ffcc;
+    color:black;
+}
+
+/* MAIN */
+.main{
+    margin-left:200px;
+    padding:20px;
+}
+
+/* CARD */
+.card{
+    border:2px solid #00ffcc;
+    padding:20px;
+    margin-top:20px;
+    box-shadow:0 0 15px #00ffcc;
+    text-align:center;
+}
+
+/* BUTTON */
+.btn{
+    padding:15px;
+    background:#00ffcc;
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+}
+
+/* ADS PAGE */
+.ads-box{
+    text-align:center;
+    margin-top:100px;
+}
+
+/* CIRCLE TIMER */
+.circle{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    border:6px solid #00ffcc;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin:20px auto;
+    font-size:30px;
+    animation: rotate 8s linear;
+}
+
+@keyframes rotate{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+}
