@@ -2,91 +2,42 @@
 <html>
 <head>
 <title>Ads</title>
-
-<style>
-body{
-    background:black;
-    color:white;
-    text-align:center;
-    font-family:monospace;
-}
-
-/* Circle Loader */
-.circle{
-    width:150px;
-    height:150px;
-    border-radius:50%;
-    border:8px solid red;
-    border-top:8px solid cyan;
-    margin:80px auto;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin{
-    0%{transform:rotate(0deg);}
-    100%{transform:rotate(360deg);}
-}
-
-#timer{
-    font-size:30px;
-}
-
-/* Coin Animation */
-.coin{
-    position:fixed;
-    top:-50px;
-    font-size:25px;
-    animation: fall 2s linear forwards;
-}
-
-@keyframes fall{
-    to{
-        transform:translateY(600px);
-        opacity:0;
-    }
-}
-</style>
+<link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
-<h2>⚡ Watching Ads...</h2>
+<div class="ads-box">
 
-<div class="circle"></div>
+<h2>🎬 Ads Loading...</h2>
 
-<p id="timer">8</p>
+<div class="circle">
+    <span id="time">8</span>
+</div>
 
-<audio id="coinSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
+<p>Watch full ads to earn coin</p>
+
+</div>
 
 <script>
+
 let time = 8;
 
-let interval = setInterval(()=>{
+let timer = setInterval(()=>{
     time--;
-    document.getElementById("timer").innerText = time;
+    document.getElementById("time").innerText = time;
 
     if(time <= 0){
-        clearInterval(interval);
-
-        // coin rain
-        for(let i=0;i<10;i++){
-            let coin = document.createElement("div");
-            coin.className = "coin";
-            coin.innerHTML = "💰";
-            coin.style.left = Math.random()*window.innerWidth + "px";
-            document.body.appendChild(coin);
-
-            setTimeout(()=>coin.remove(),2000);
-        }
-
-        // sound
-        document.getElementById("coinSound").play();
-
-        setTimeout(()=>{
-            window.location.href="/complete-ad";
-        },2000);
+        clearInterval(timer);
+        window.location.href="/complete-ad";
     }
 },1000);
+
+// ❌ अगर user जल्दी back करे
+window.onbeforeunload = function(){
+    return "Ad not completed!";
+};
+
 </script>
 
 </body>
