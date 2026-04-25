@@ -110,6 +110,7 @@ def verify_otp(response: Response, email: str = Form(...), otp: str = Form(...))
             "email": email,
             "password": hashed,
             "coins": 2,
+            "is_premium": False,
             "theme": "default",
             "ad_start_time": 0
         }
@@ -203,11 +204,18 @@ def complete_ad(request: Request):
 
     watch_time = int(time.time()) - user.get("ad_start_time", 0)
 
-    if watch_time >= 8:
+if watch_time >= 8:
+    if user.get("is_premium"):
+        users_collection.update_one(
+            {"email": email},
+            {"$inc": {"coins": 2}}
+        )
+    else:
         users_collection.update_one(
             {"email": email},
             {"$inc": {"coins": 1}}
         )
+    return RedirectResponse("/dashboard", status_code=303)
         return RedirectResponse("/dashboard", status_code=303)
     else:
         return HTMLResponse("<h2 style='color:red'>❌ Watch full ad</h2>")
