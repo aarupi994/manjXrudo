@@ -9,14 +9,12 @@ from pymongo import MongoClient
 
 # ================== APP ==================
 app = FastAPI()
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
 # ================== MONGODB ==================
 MONGO_URL = "mongodb+srv://rudowner1_db_user:manjXrudo@rudo.esfs5m0.mongodb.net/?appName=Rudo"
-
 client = MongoClient(MONGO_URL)
 db = client["manjxrudo"]
 users_collection = db["users"]
@@ -59,7 +57,9 @@ def home(request: Request):
 
 # ================== OTP PAGE ==================
 @app.get("/otp", response_class=HTMLResponse)
-def otp_page(request: Request, email: str):
+def otp_page(request: Request):
+    email = request.cookies.get("pending_email")
+
     return templates.TemplateResponse(
         request=request,
         name="otp.html",
@@ -87,7 +87,10 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
 
     send_email_otp(email, otp)
 
-    return RedirectResponse(f"/otp?email={email}", status_code=303)
+    res = RedirectResponse("/otp", status_code=303)
+    res.set_cookie("pending_email", email, max_age=300)
+
+    return res
 
 # ================== VERIFY OTP ==================
 @app.post("/verify-otp")
@@ -215,4 +218,3 @@ def logout():
     res = RedirectResponse("/")
     res.delete_cookie("user")
     return res
-    
