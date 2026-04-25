@@ -10,7 +10,7 @@
 <div class="sidebar">
     <h2>⚡ Panel</h2>
     <a href="#">Dashboard</a>
-    <a href="/start-ad">Earn Coin</a>
+    <a href="/start-ad">Earn Coins</a>
     <a href="/logout">Logout</a>
 </div>
 
@@ -18,22 +18,17 @@
 
 <h2>Welcome {{username}}</h2>
 
-<div class="card">
-    <h3>💰 Coins</h3>
-    <h1 id="coin">{{coins}}</h1>
+<div class="box">
+    💰 Coins: {{coins}}
 </div>
 
-<div class="card">
-    <button class="btn" onclick="startAd()">🎬 Watch Ads → Earn</button>
+<div class="box">
+    <a href="/start-ad">
+        <button class="glow-btn">🎥 Watch Ads</button>
+    </a>
 </div>
 
 </div>
-
-<script>
-function startAd(){
-    window.location.href="/start-ad";
-}
-</script>
 
 </body>
 </html>
