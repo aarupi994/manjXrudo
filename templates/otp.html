@@ -7,20 +7,19 @@
 
 <body>
 
-<div class="container">
+<div class="center-box">
 
-    <div class="card">
-        <h2>Verify OTP</h2>
+    <h3>Verify Email</h3>
 
-        <p>Email: {{email[:3]}}******@{{email.split('@')[1]}}</p>
+    <p>OTP sent to:</p>
+    <b>{{email[:3]}}******@gmail.com</b>
 
-        <form action="/verify-otp" method="post">
-            <input type="hidden" name="email" value="{{email}}">
-            <input type="text" name="otp" placeholder="Enter OTP" required>
+    <form action="/verify-otp" method="post">
+        <input type="hidden" name="email" value="{{email}}">
+        <input type="text" name="otp" placeholder="Enter OTP" required>
 
-            <button>Verify</button>
-        </form>
-    </div>
+        <button type="submit">Verify</button>
+    </form>
 
 </div>
 
