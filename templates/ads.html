@@ -1,43 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Ads</title>
+<title>Watching Ad</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
-<div class="ads-box">
+<div class="center-box">
 
-<h2>🎬 Ads Loading...</h2>
+    <h2>Ad Loading...</h2>
 
-<div class="circle">
-    <span id="time">8</span>
-</div>
-
-<p>Watch full ads to earn coin</p>
+    <div class="circle">
+        <span id="time">8</span>
+    </div>
 
 </div>
 
 <script>
-
-let time = 8;
+let t = 8;
 
 let timer = setInterval(()=>{
-    time--;
-    document.getElementById("time").innerText = time;
+    t--;
+    document.getElementById("time").innerText = t;
 
-    if(time <= 0){
+    if(t<=0){
         clearInterval(timer);
         window.location.href="/complete-ad";
     }
 },1000);
-
-// ❌ अगर user जल्दी back करे
-window.onbeforeunload = function(){
-    return "Ad not completed!";
-};
-
 </script>
 
 </body>
